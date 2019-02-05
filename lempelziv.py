@@ -99,6 +99,73 @@ def decompress(encoded, W, L):
     return message
 
 
+# Test reading files into bitarray in chunks
+def readfile(filename):
+    with open(filename, 'rb') as f:
+        while True:
+            chunk = bitarray.bitarray()
+            try:
+                chunk.fromfile(f, 1)
+            except EOFError:
+                chunk.fromfile(f)
+                break
+
+            print(f.tell())
+
+
+def encodeAtPosition(window, buffer):
+    n = len(buffer)
+    l = 0
+
+    substring = bitarray.bitarray()
+    next_sym = buffer[l * 8: (l+1) * 8]
+
+    while substring + next_sym in window:
+        substring += next_sym
+        l += 1
+        if l * 8 >= n:
+            next_sym = None
+            break
+        next_sym = buffer[l * 8:(l+1) * 8]
+
+    d = window[::-1].index(substring[::-1]) + l if l > 0 else 0
+
+    return (d, l, next_sym)
+
+
+def compressfile(filename, window_size, buffer_size):
+    w_start_index = -window_size
+
+    with open(filename, 'rb') as f:
+        while True:
+            chunk = bitarray.bitarray()
+            bytes_to_read = window_size + buffer_size + min(w_start_index, 0)
+            try:
+                chunk.fromfile(f, bytes_to_read);
+            except EOFError:
+                chunk.fromfile(f)
+
+            index = (min(w_start_index, 0) + window_size) * 8
+            window = chunk[:index]
+            buffer = chunk[index:index + (buffer_size  * 8)]
+
+            if buffer.length() == 0:
+                break
+
+            # Encode at current position, then read correct next chunk of file
+            d, l, next_sym = encodeAtPosition(window, buffer)
+
+            if next_sym:
+                next_sym_char = next_sym.tobytes().decode()
+            else:
+                next_sym_char = None
+
+            print((d, l, next_sym_char))
+
+            w_start_index += l + 1
+            f.seek(max(w_start_index, 0), 0)
+
+
 if __name__ == '__main__':
     # Test case from lecture slides
     test = "Peter Piper picked a peck of pickled peppers; A peck of pickled peppers Peter Piper picked;If Peter Piper picked a peck of pickled peppers,Where's the peck of pickled peppers Peter Piper picked?"
@@ -120,3 +187,5 @@ if __name__ == '__main__':
     decompressed = decompress(compressed, window_size, buffer_size)
 
     assert decompressed == test, 'Decompression invalid'
+
+    compressfile('test.txt', 20, 20)
