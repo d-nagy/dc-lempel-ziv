@@ -84,13 +84,13 @@ class LzDecoder():
 
     @staticmethod
     def _bitarray_to_int(bits):
-        _int = 0
-        for bit in bits:
-            _int = (_int << 1) | bit
-
-        return _int
+        return int('0b' + bits.to01(), 2)
 
 
 if __name__ == '__main__':
+    import sys
+
+    FILE = sys.argv[1]
+
     decoder = LzDecoder(10000, 1000)
-    decoder.decompress('test_files/lorem.txt.LZIV')
+    decoder.decompress(f'test_files/{FILE}.LZIV')

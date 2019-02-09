@@ -111,5 +111,9 @@ class LzEncoder():
 
 
 if __name__ == '__main__':
+    import sys
+
+    FILE = sys.argv[1]
+
     encoder = LzEncoder(10000, 1000)
-    encoder.compress('test_files/lorem.txt')
+    encoder.compress('test_files/' + FILE)
