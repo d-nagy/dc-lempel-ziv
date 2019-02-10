@@ -15,6 +15,15 @@ class LzDecoder():
         self.step = self.distance_bits + self.length_bits + 8
         self.decompression = []
 
+    def set_window_size(self, window_size):
+        """ Setter method for window size """
+        self.window_size = window_size
+
+
+    def set_buffer_size(self, buffer_size):
+        """ Setter method for buffer size """
+        self.buffer_size = buffer_size
+
 
     def decompress(self, filename):
         """

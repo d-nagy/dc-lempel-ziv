@@ -2,8 +2,11 @@
 
 import os
 import time
-import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
+import numpy as np
 
 import decoder
 import encoder
@@ -20,6 +23,16 @@ class LempelZiv():
 
 
     def analyse_time_complexity(self, input_dir, rounds):
+        """
+        Perform a running time analysis on the encoder and decoder, plot and
+        save results.
+
+        Params:
+            input_dir: directory containing files to benchmark with
+            rounds: number of times to run benchmark on each file to get average
+                    times
+        """
+
         files = [f'{input_dir}/{filename}' for filename in os.listdir(input_dir)]
 
         file_sizes = {filename: os.path.getsize(filename) / 1000
@@ -57,7 +70,41 @@ class LempelZiv():
         plt.savefig('plots/decoder_running_time.png')
 
 
+    def analyse_compression_ratio(self, filename):
+        file_size = os.path.getsize(filename)
+
+        upper_lim = round(float(file_size) / 1000) * 1000
+        step = int(upper_lim / 10)
+
+        window_sizes = buffer_sizes = [size for size in range(step, upper_lim + step, step)]
+
+        benchmarks = self.benchmark_ratio(filename, window_sizes, buffer_sizes)
+
+        x_values, y_values = np.meshgrid(window_sizes, buffer_sizes)
+        z_values = []
+
+        for ratios in benchmarks.values():
+            row = []
+            for ratio in ratios:
+                row.append(ratio)
+            z_values.append(row)
+
+
+
     def benchmark_time(self, filename, rounds):
+        """
+        Benchmark running time of compression and decompression on given file,
+        obtaining the following data:
+
+            Max. running time
+            Min. running time
+            Average running time
+
+        Params:
+            filename: name of file to compress/decompress
+            rounds: number of times to repeat benchmark
+        """
+
         print(f'{filename}: {rounds} rounds')
 
         encoding_times = []
@@ -87,6 +134,36 @@ class LempelZiv():
         print()
 
         return (encoding_benchmark, decoding_benchmark)
+
+
+    def benchmark_ratio(self, filename, window_sizes, buffer_sizes):
+        """
+        Benchmark compression ratio on given file, using given window and
+        lookahead buffer sizes.
+        """
+
+        uncompressed_size = os.path.getsize(filename)
+
+        benchmarks = {}
+
+        for w_size in window_sizes:
+            self.encoder.set_window_size(w_size)
+            self.decoder.set_window_size(w_size)
+
+            benchmarks[w_size] = []
+
+            for b_size in buffer_sizes:
+                self.encoder.set_buffer_size(b_size)
+                self.decoder.set_buffer_size(b_size)
+
+                self.compress(filename)
+                compressed_size = os.path.getsize(filename + '.LZIV')
+                self.decompress(filename + '.LZIV')
+                ratio = uncompressed_size / compressed_size
+                benchmarks[w_size].append(ratio)
+
+        return benchmarks
+
 
 
     def compress(self, filename):

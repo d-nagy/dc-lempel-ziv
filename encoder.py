@@ -15,6 +15,16 @@ class LzEncoder():
         self.compression = []
 
 
+    def set_window_size(self, window_size):
+        """ Setter method for window size """
+        self.window_size = window_size
+
+
+    def set_buffer_size(self, buffer_size):
+        """ Setter method for buffer size """
+        self.buffer_size = buffer_size
+
+
     def compress(self, filename):
         """
         Compress a file using LZ77 coding.
