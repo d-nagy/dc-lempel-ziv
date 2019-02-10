@@ -18,11 +18,13 @@ class LzEncoder():
     def set_window_size(self, window_size):
         """ Setter method for window size """
         self.window_size = window_size
+        self.distance_bits = (window_size - 1).bit_length()
 
 
     def set_buffer_size(self, buffer_size):
         """ Setter method for buffer size """
         self.buffer_size = buffer_size
+        self.length_bits = (buffer_size - 1).bit_length()
 
 
     def compress(self, filename):
@@ -124,6 +126,8 @@ if __name__ == '__main__':
     import sys
 
     FILE = sys.argv[1]
+    W = int(sys.argv[2])
+    L = int(sys.argv[3])
 
-    encoder = LzEncoder(10000, 250)
+    encoder = LzEncoder(W, L)
     encoder.compress(FILE)
