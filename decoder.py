@@ -92,5 +92,5 @@ if __name__ == '__main__':
 
     FILE = sys.argv[1]
 
-    decoder = LzDecoder(10000, 1000)
-    decoder.decompress(f'test_files/{FILE}.LZIV')
+    decoder = LzDecoder(10000, 250)
+    decoder.decompress(f'{FILE}.LZIV')

@@ -62,7 +62,7 @@ class LzEncoder():
                 window += buffer[:(length + 1) * 8]
 
                 if window.length() > self.window_size * 8:
-                    window = window[window.length() - self.window_size * 8:]
+                    del window[:window.length() - self.window_size * 8]
 
                 buffer = buffer[(length + 1) * 8:] + next_bytes
 
@@ -115,5 +115,5 @@ if __name__ == '__main__':
 
     FILE = sys.argv[1]
 
-    encoder = LzEncoder(10000, 1000)
-    encoder.compress('test_files/' + FILE)
+    encoder = LzEncoder(10000, 250)
+    encoder.compress(FILE)
