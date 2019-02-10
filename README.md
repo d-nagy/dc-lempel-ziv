@@ -38,3 +38,61 @@ Thoroughness:
 ## Submission
 
 Code and **5 page** PDF report.
+
+---
+
+## Obtaining results
+
+### Running time (for encoder and decoder)
+
+1. Experimental Time Complexity
+   - **Input**: Lorem ipsum text
+   - **Independent variable**: size of input
+   - **Dependent variable**: execution time
+   - **Constant variables**: window size, buffer size
+
+2. Effect of window size
+   - **Input**: Lorem Ipsum text
+   - **Independent variable**: window size
+   - **Dependent variable**: execution time
+   - **Constant variables**: input size, buffer size
+
+3. Effect of buffer size
+   - **Input**: Lorem Ipsum text
+   - **Independent variable**: buffer size
+   - **Dependent variable**: execution time
+   - **Constant variables**: input size, window size
+
+4. Different file types
+   - **Input**: files
+   - **Independent variable**: input file type
+   - **Dependent variable**: execution time
+   - **Constant variables**: input size, window size, buffer size
+
+5. Different machines
+   - Perform (1) on different computers and compare
+
+### Compression Ratio
+
+1. Effect of window size
+   - **Input**: Lorem ipsum text
+   - **Independent variable**: window size
+   - **Dependent variable**: compression ratio
+   - **Constant variables**: buffer size, input size
+
+2. Effect of buffer size
+   - **Input**: Lorem ipsum text
+   - **Independent variable**: buffer size
+   - **Dependent variable**: compression ratio
+   - **Constant variables**: window size, input size
+
+3. Different file types
+   - **Input**: files
+   - **Independent variable**: input file type
+   - **Dependent variable**: execution time
+   - **Constant variables**: input size, window size, buffer size
+
+### Comparison with other techniques
+
+1. Running time
+2. Compression ratio
