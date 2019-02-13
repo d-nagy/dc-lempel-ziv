@@ -18,8 +18,10 @@ class LempelZiv():
     def __init__(self, window_size, buffer_size):
         self.window_size = window_size
         self.buffer_size = buffer_size
-        self.encoder = encoder.Lz77Encoder(window_size, buffer_size)
-        self.decoder = decoder.Lz77Decoder(window_size, buffer_size)
+        self.lz77_encoder = encoder.Lz77Encoder(window_size, buffer_size)
+        self.lz77_decoder = decoder.Lz77Decoder(window_size, buffer_size)
+        self.lzss_encoder = encoder.LzssEncoder(window_size, buffer_size)
+        self.lzss_decoder = decoder.LzssDecoder(window_size, buffer_size)
 
 
     def analyse_time_complexity(self, input_dir, rounds):
@@ -34,6 +36,7 @@ class LempelZiv():
         """
 
         files = [f'{input_dir}/{filename}' for filename in os.listdir(input_dir)]
+        files.sort(key = lambda path: os.path.getsize(path))
 
         file_sizes = {filename: os.path.getsize(filename) / 1000
                       for filename in files}
@@ -47,26 +50,54 @@ class LempelZiv():
         avg_decoding_times = {key: value[1]['avg']
                               for key, value in benchmarks.items()}
 
-        x_values = []
-        encoding_y_values = []
-        decoding_y_values = []
+        max_encoding_times = {key: value[0]['max']
+                              for key, value in benchmarks.items()}
 
-        for filename in files:
-            x_values.append(file_sizes[filename])
-            encoding_y_values.append(avg_encoding_times[filename])
-            decoding_y_values.append(avg_decoding_times[filename])
+        max_decoding_times = {key: value[1]['max']
+                              for key, value in benchmarks.items()}
 
-        plt.plot(x_values, encoding_y_values, 'o')
+        min_encoding_times = {key: value[0]['min']
+                              for key, value in benchmarks.items()}
+
+        min_decoding_times = {key: value[1]['min']
+                              for key, value in benchmarks.items()}
+
+        encoding_times = [avg_encoding_times, max_encoding_times, min_encoding_times]
+        decoding_times = [avg_decoding_times, max_decoding_times, min_decoding_times]
+        labels = ['Average', 'Maximum', 'Minimum']
+        colors = ['b', 'r', 'g']
+
+        for times, label, color in zip(encoding_times, labels, colors):
+            x_values = []
+            encoding_y_values = []
+
+            for filename in files:
+                x_values.append(file_sizes[filename])
+                encoding_y_values.append(times[filename])
+
+            plt.plot(x_values, encoding_y_values, label=label, color=color)
+
         plt.title('Encoder running time')
         plt.xlabel('File size (KB)')
         plt.ylabel('Average running time (s)')
+        plt.legend()
         plt.savefig('plots/encoder_running_time.png')
         plt.cla()
 
-        plt.plot(x_values, decoding_y_values, 'o')
+        for times, label, color in zip(decoding_times, labels, colors):
+            x_values = []
+            decoding_y_values = []
+
+            for filename in files:
+                x_values.append(file_sizes[filename])
+                decoding_y_values.append(times[filename])
+
+            plt.plot(x_values, decoding_y_values, label=label, color=color)
+
         plt.title('Decoder running time')
         plt.xlabel('File size (KB)')
         plt.ylabel('Average running time (s)')
+        plt.legend()
         plt.savefig('plots/decoder_running_time.png')
 
 
@@ -130,12 +161,12 @@ class LempelZiv():
 
         for _ in range(rounds):
             encode_start = time.time()
-            self.compress(filename)
+            self.compress_lz77(filename)
             encode_stop = time.time()
             encoding_times.append(encode_stop - encode_start)
 
             decode_start = time.time()
-            self.decompress(filename + '.LZIV')
+            self.decompress_lz77(filename + self.lz77_encoder.file_ext)
             decode_stop = time.time()
             decoding_times.append(decode_stop - decode_start)
 
@@ -160,26 +191,26 @@ class LempelZiv():
         lookahead buffer sizes.
         """
 
-        original_window_size = self.encoder.window_size
-        original_buffer_size = self.encoder.buffer_size
+        original_window_size = self.lz77_encoder.window_size
+        original_buffer_size = self.lz77_encoder.buffer_size
 
         uncompressed_size = os.path.getsize(filename)
 
         benchmarks = []
 
         for w_size in window_sizes:
-            self.encoder.set_window_size(w_size)
-            self.decoder.set_window_size(w_size)
+            self.lz77_encoder.set_window_size(w_size)
+            self.lz77_decoder.set_window_size(w_size)
 
             row = []
 
             for b_size in buffer_sizes:
-                self.encoder.set_buffer_size(b_size)
-                self.decoder.set_buffer_size(b_size)
+                self.lz77_encoder.set_buffer_size(b_size)
+                self.lz77_decoder.set_buffer_size(b_size)
 
-                self.compress(filename)
-                compressed_size = os.path.getsize(filename + '.LZIV')
-                self.decompress(filename + '.LZIV')
+                self.compress_lz77(filename)
+                compressed_size = os.path.getsize(filename + self.lz77_encoder.file_ext)
+                self.decompress_lz77(filename + self.lz77_encoder.file_ext)
                 ratio = uncompressed_size / compressed_size
                 print(w_size, b_size, uncompressed_size, compressed_size, ratio)
 
@@ -187,23 +218,32 @@ class LempelZiv():
 
             benchmarks.append(row)
 
-        self.encoder.set_window_size(original_window_size)
-        self.decoder.set_window_size(original_window_size)
-        self.encoder.set_buffer_size(original_buffer_size)
-        self.decoder.set_buffer_size(original_buffer_size)
+        self.lz77_encoder.set_window_size(original_window_size)
+        self.lz77_decoder.set_window_size(original_window_size)
+        self.lz77_encoder.set_buffer_size(original_buffer_size)
+        self.lz77_decoder.set_buffer_size(original_buffer_size)
 
         return benchmarks
 
 
-
-    def compress(self, filename):
+    def compress_lz77(self, filename):
         """ Compress data """
-        self.encoder.compress(filename)
+        self.lz77_encoder.compress(filename)
 
 
-    def decompress(self, filename):
+    def decompress_lz77(self, filename):
         """ Decompress data """
-        self.decoder.decompress(filename)
+        self.lz77_decoder.decompress(filename)
+
+
+    def compress_lzss(self, filename):
+        """ Compress data """
+        self.lzss_encoder.compress(filename)
+
+
+    def decompress_lzss(self, filename):
+        """ Decompress data """
+        self.lzss_decoder.decompress(filename)
 
 
 if __name__ == '__main__':
@@ -214,8 +254,8 @@ if __name__ == '__main__':
 
     lz = LempelZiv(W, L)
 
-    # lz.analyse_time_complexity(INPUT_DIR, 1)
-    lz.analyse_compression_ratio(FILE)
+    lz.analyse_time_complexity(INPUT_DIR, 1)
+    # lz.analyse_compression_ratio(FILE)
 
     # print(len(lz.decoder.decompression))
 

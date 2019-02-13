@@ -164,9 +164,9 @@ if __name__ == '__main__':
     W = int(sys.argv[2])
     L = int(sys.argv[3])
 
-    # decoder = Lz77Decoder(W, L)
-    # decoder.decompress(f'{FILE}.LZ77')
+    decoder = Lz77Decoder(W, L)
+    decoder.decompress(f'{FILE}.LZ77')
 
-    decoder = LzssDecoder(W, L)
-    decoder.decompress(f'{FILE}.LZSS')
+    # decoder = LzssDecoder(W, L)
+    # decoder.decompress(f'{FILE}.LZSS')
     # [print(code) for code in decoder.decompression]

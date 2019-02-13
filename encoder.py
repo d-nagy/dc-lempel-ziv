@@ -239,8 +239,8 @@ if __name__ == '__main__':
     W = int(sys.argv[2])
     L = int(sys.argv[3])
 
-    # encoder = Lz77Encoder(W, L)
-    encoder = LzssEncoder(W, L)
+    encoder = Lz77Encoder(W, L)
+    # encoder = LzssEncoder(W, L)
 
     encoder.compress(FILE)
     # [print(code) for code in encoder.compression]
