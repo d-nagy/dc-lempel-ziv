@@ -18,8 +18,8 @@ class LempelZiv():
     def __init__(self, window_size, buffer_size):
         self.window_size = window_size
         self.buffer_size = buffer_size
-        self.encoder = encoder.LzEncoder(window_size, buffer_size)
-        self.decoder = decoder.LzDecoder(window_size, buffer_size)
+        self.encoder = encoder.Lz77Encoder(window_size, buffer_size)
+        self.decoder = decoder.Lz77Decoder(window_size, buffer_size)
 
 
     def analyse_time_complexity(self, input_dir, rounds):

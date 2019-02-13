@@ -4,7 +4,7 @@ import os
 from bitarray import bitarray
 
 
-class LzDecoder():
+class Lz77Decoder():
     """ LZ77 Decoder """
 
     def __init__(self, window_size, buffer_size):
@@ -14,6 +14,7 @@ class LzDecoder():
         self.length_bits = (buffer_size - 1).bit_length()
         self.step = self.distance_bits + self.length_bits + 8
         self.decompression = []
+        self.file_ext = '.LZ77'
 
     def set_window_size(self, window_size):
         """ Setter method for window size """
@@ -71,7 +72,7 @@ class LzDecoder():
 
                     index += length + 1
 
-        with open(filename.replace('.LZIV', ''), 'wb') as output_file:
+        with open(filename.replace(self.file_ext, ''), 'wb') as output_file:
             output_file.write(message)
 
         os.remove(filename)
@@ -100,6 +101,62 @@ class LzDecoder():
         return int('0b' + bits.to01(), 2)
 
 
+class LzssDecoder(Lz77Decoder):
+    """ LZSS Decoder """
+
+    def __init__(self, window_size, buffer_size):
+        super().__init__(window_size, buffer_size)
+        self.file_ext = '.LZSS'
+
+
+    def decompress(self, filename):
+        """
+        Decompress a file that was compressed using LZ77 coding.
+
+        Params:
+            filename: name of file to decompress
+        """
+
+        self.decompression = []
+
+        message = b''
+        index = 0
+
+        compressed = bitarray()
+
+        with open(filename, 'rb') as input_file:
+            compressed.fromfile(input_file)
+
+            while True:
+                code_bin = compressed[:self.step + 1]
+
+                if code_bin.length() < 8:
+                    break
+
+                if not code_bin.pop(0):
+                    next_sym = code_bin[:8].tobytes()
+                    distance = length = 0
+                    substring = b''
+                    del compressed[:9]
+                else:
+                    if code_bin.length() < self.step - 8:
+                        break
+                    distance, length, next_sym = self._parse_bin_code(code_bin)
+                    substring = message[index - distance:index - distance + length]
+                    del compressed[:self.step + 1]
+
+                self.decompression.append((distance, length, next_sym))
+
+                message += substring + next_sym
+
+                index += length + 1
+
+        with open(filename.replace(self.file_ext, ''), 'wb') as output_file:
+            output_file.write(message)
+
+        os.remove(filename)
+
+
 if __name__ == '__main__':
     import sys
 
@@ -107,5 +164,9 @@ if __name__ == '__main__':
     W = int(sys.argv[2])
     L = int(sys.argv[3])
 
-    decoder = LzDecoder(W, L)
-    decoder.decompress(f'{FILE}.LZIV')
+    # decoder = Lz77Decoder(W, L)
+    # decoder.decompress(f'{FILE}.LZ77')
+
+    decoder = LzssDecoder(W, L)
+    decoder.decompress(f'{FILE}.LZSS')
+    # [print(code) for code in decoder.decompression]
