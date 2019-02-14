@@ -233,6 +233,7 @@ class LzssEncoder(Lz77Encoder):
 
 if __name__ == '__main__':
     import sys
+    import time
 
     FILE = sys.argv[1]
     W = int(sys.argv[2])
@@ -241,5 +242,29 @@ if __name__ == '__main__':
     encoder = Lz77Encoder(W, L)
     # encoder = LzssEncoder(W, L)
 
+    uncompressed_size = os.path.getsize(FILE)
+
+    start = time.time()
     encoder.compress(FILE)
+    end = time.time()
+
+    runtime = end - start
+
+    compressed_size = os.path.getsize(FILE + encoder.file_ext)
+    ratio = uncompressed_size / compressed_size
+
+    print('-----------------------------------------')
+    print('LZ77 Encoder')
+    print('-----------------------------------------')
+    print('W = ', W)
+    print('L = ', L)
+    print('-----------------------------------------')
+    print(f'File:              {FILE}')
+    print(f'Original size:     {uncompressed_size} bytes')
+    print(f'Compressed size:   {compressed_size} bytes')
+    print(f'Compression ratio: {round(ratio, 2)}')
+    print(f'Running time:      {round(runtime, 2)} seconds')
+    print('-----------------------------------------')
+
+
     # [print(code) for code in encoder.compression]
