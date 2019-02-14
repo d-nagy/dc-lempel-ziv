@@ -36,7 +36,7 @@ class LempelZiv():
         """
 
         files = [f'{input_dir}/{filename}' for filename in os.listdir(input_dir)]
-        files.sort(key = lambda path: os.path.getsize(path))
+        files.sort(key=os.path.getsize)
 
         file_sizes = {filename: os.path.getsize(filename) / 1000
                       for filename in files}
@@ -75,11 +75,17 @@ class LempelZiv():
                 x_values.append(file_sizes[filename])
                 encoding_y_values.append(times[filename])
 
-            plt.plot(x_values, encoding_y_values, label=label, color=color)
+            plt.plot(x_values, encoding_y_values, color + 'x', label=label)
 
-        plt.title('Encoder running time')
+            fit = np.polyfit(x_values, encoding_y_values, 1)
+            fit_fn = np.poly1d(fit)
+            fit_range = np.arange(min(x_values), max(x_values))
+            plt.plot(fit_range, fit_fn(fit_range), color=color)
+
+
+        plt.title(f'Encoder running time (W = {self.window_size}B, L = {self.buffer_size}B)')
         plt.xlabel('File size (KB)')
-        plt.ylabel('Average running time (s)')
+        plt.ylabel('Running time (s)')
         plt.legend()
         plt.savefig('plots/encoder_running_time.png')
         plt.cla()
@@ -92,13 +98,123 @@ class LempelZiv():
                 x_values.append(file_sizes[filename])
                 decoding_y_values.append(times[filename])
 
-            plt.plot(x_values, decoding_y_values, label=label, color=color)
+            plt.plot(x_values, decoding_y_values, color + 'x', label=label)
 
-        plt.title('Decoder running time')
+            fit = np.polyfit(x_values, decoding_y_values, 2)
+            fit_fn = np.poly1d(fit)
+            fit_range = np.arange(min(x_values), max(x_values))
+            plt.plot(fit_range, fit_fn(fit_range), color=color)
+
+        plt.title(f'Decoder running time (W = {self.window_size}B, L = {self.buffer_size}B)')
         plt.xlabel('File size (KB)')
-        plt.ylabel('Average running time (s)')
+        plt.ylabel('Running time (s)')
         plt.legend()
         plt.savefig('plots/decoder_running_time.png')
+
+
+    def analyse_time_params(self, filename, rounds):
+        window_sizes = self._calc_window_sizes(filename)
+        buffer_sizes = self._calc_buffer_sizes(filename)
+
+        original_window_size = self.lz77_encoder.window_size
+        original_buffer_size = self.lz77_encoder.buffer_size
+
+        avg_encoding_times = []
+        max_encoding_times = []
+        min_encoding_times = []
+
+        avg_decoding_times = []
+        max_decoding_times = []
+        min_decoding_times = []
+
+        x_values = np.array(window_sizes) / 1000
+
+        for w_size in window_sizes:
+            self.lz77_encoder.set_window_size(w_size)
+            self.lz77_decoder.set_window_size(w_size)
+
+            encoding_benchmark, decoding_benchmark = self.benchmark_time(filename, rounds)
+
+            avg_encoding_times.append(encoding_benchmark['avg'])
+            min_encoding_times.append(encoding_benchmark['min'])
+            max_encoding_times.append(encoding_benchmark['max'])
+
+            avg_decoding_times.append(decoding_benchmark['avg'])
+            min_decoding_times.append(decoding_benchmark['min'])
+            max_decoding_times.append(decoding_benchmark['max'])
+
+        plt.plot(x_values, avg_encoding_times, color='b', label='Average')
+        plt.plot(x_values, max_encoding_times, color='r', label='Maximum')
+        plt.plot(x_values, min_encoding_times, color='g', label='Minimum')
+
+        plt.title(f'Encoder running time (L = {self.lz77_encoder.buffer_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.xlabel('Window size (KB)')
+        plt.ylabel('Running time (s)')
+        plt.legend()
+        plt.savefig('plots/encoder_time_window_sizes.png')
+        plt.cla()
+
+        plt.plot(x_values, avg_decoding_times, color='b', label='Average')
+        plt.plot(x_values, max_decoding_times, color='r', label='Maximum')
+        plt.plot(x_values, min_decoding_times, color='g', label='Minimum')
+
+        plt.title(f'Decoder running time (L = {self.lz77_encoder.buffer_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.xlabel('Window size (KB)')
+        plt.ylabel('Running time (s)')
+        plt.legend()
+        plt.savefig('plots/decoder_time_window_sizes.png')
+        plt.cla()
+
+        self.lz77_encoder.set_window_size(original_window_size)
+        self.lz77_decoder.set_window_size(original_window_size)
+
+        avg_encoding_times = []
+        max_encoding_times = []
+        min_encoding_times = []
+
+        avg_decoding_times = []
+        max_decoding_times = []
+        min_decoding_times = []
+
+        x_values = np.array(buffer_sizes)
+
+        for b_size in buffer_sizes:
+            self.lz77_encoder.set_buffer_size(b_size)
+            self.lz77_decoder.set_buffer_size(b_size)
+
+            encoding_benchmark, decoding_benchmark = self.benchmark_time(filename, rounds)
+
+            avg_encoding_times.append(encoding_benchmark['avg'])
+            min_encoding_times.append(encoding_benchmark['min'])
+            max_encoding_times.append(encoding_benchmark['max'])
+
+            avg_decoding_times.append(decoding_benchmark['avg'])
+            min_decoding_times.append(decoding_benchmark['min'])
+            max_decoding_times.append(decoding_benchmark['max'])
+
+        plt.plot(x_values, avg_encoding_times, color='b', label='Average')
+        plt.plot(x_values, max_encoding_times, color='r', label='Maximum')
+        plt.plot(x_values, min_encoding_times, color='g', label='Minimum')
+
+        plt.title(f'Encoder running time (W = {self.lz77_encoder.window_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.xlabel('Lookahead buffer size (KB)')
+        plt.ylabel('Running time (s)')
+        plt.legend()
+        plt.savefig('plots/encoder_time_buffer_sizes.png')
+        plt.cla()
+
+        plt.plot(x_values, avg_decoding_times, color='b', label='Average')
+        plt.plot(x_values, max_decoding_times, color='r', label='Maximum')
+        plt.plot(x_values, min_decoding_times, color='g', label='Minimum')
+
+        plt.title(f'Decoder running time (W = {self.lz77_encoder.window_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.xlabel('Buffer size (B)')
+        plt.ylabel('Running time (s)')
+        plt.legend()
+        plt.savefig('plots/decoder_time_buffer_sizes.png')
+
+        self.lz77_encoder.set_buffer_size(original_buffer_size)
+        self.lz77_decoder.set_buffer_size(original_buffer_size)
 
 
     def analyse_compression_ratio(self, filename):
@@ -110,12 +226,8 @@ class LempelZiv():
             filename: file to perform benchmark on
         """
 
-        file_size = os.path.getsize(filename)
-
-        upper_lim = round(float(file_size) / 1000) * 1000
-        step = int(upper_lim / 10)
-
-        window_sizes = buffer_sizes = [size for size in range(step, upper_lim + step, step)]
+        window_sizes = self._calc_window_sizes(filename)
+        buffer_sizes = self._calc_buffer_sizes(filename)
 
         benchmarks = self.benchmark_ratio(filename, window_sizes, buffer_sizes)
 
@@ -154,10 +266,12 @@ class LempelZiv():
             rounds: number of times to repeat benchmark
         """
 
-        print(f'{filename}: {rounds} rounds')
+        print(f'{filename}: {rounds} rounds, W = {self.lz77_encoder.window_size}, L = {self.lz77_encoder.buffer_size}')
 
         encoding_times = []
         decoding_times = []
+
+        print(os.path.getsize(filename))
 
         for _ in range(rounds):
             encode_start = time.time()
@@ -246,6 +360,26 @@ class LempelZiv():
         self.lzss_decoder.decompress(filename)
 
 
+    @staticmethod
+    def _calc_window_sizes(filename):
+        file_size = os.path.getsize(filename)
+
+        upper_lim = round(float(file_size) / 1000) * 1000
+        step = int(upper_lim / 10)
+
+        return [size for size in range(step, upper_lim + step, step)]
+
+
+    @staticmethod
+    def _calc_buffer_sizes(filename):
+        file_size = os.path.getsize(filename)
+
+        upper_lim = round(float(file_size / 10) / 1000) * 1000
+        step = int(upper_lim / 10)
+
+        return [size for size in range(step, upper_lim + step, step)]
+
+
 if __name__ == '__main__':
     INPUT_DIR = 'lorem'
     FILE = 'lorem/10kb.txt'
@@ -254,8 +388,9 @@ if __name__ == '__main__':
 
     lz = LempelZiv(W, L)
 
-    lz.analyse_time_complexity(INPUT_DIR, 1)
-    # lz.analyse_compression_ratio(FILE)
+    # lz.analyse_time_complexity(INPUT_DIR, 20)
+    lz.analyse_compression_ratio(FILE)
+    # lz.analyse_time_params('lorem/60kb.txt', 5)
 
     # print(len(lz.decoder.decompression))
 
