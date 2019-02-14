@@ -20,8 +20,6 @@ class LempelZiv():
         self.buffer_size = buffer_size
         self.lz77_encoder = encoder.Lz77Encoder(window_size, buffer_size)
         self.lz77_decoder = decoder.Lz77Decoder(window_size, buffer_size)
-        self.lzss_encoder = encoder.LzssEncoder(window_size, buffer_size)
-        self.lzss_decoder = decoder.LzssDecoder(window_size, buffer_size)
 
 
     def analyse_time_complexity(self, input_dir, rounds):
@@ -114,7 +112,8 @@ class LempelZiv():
 
     def analyse_time_params(self, filename, rounds):
         window_sizes = self._calc_window_sizes(filename)
-        buffer_sizes = self._calc_buffer_sizes(filename)
+        # buffer_sizes = self._calc_buffer_sizes(filename)
+        buffer_sizes = [50, 100, 200, 300, 600, 900, 1200]
 
         original_window_size = self.lz77_encoder.window_size
         original_buffer_size = self.lz77_encoder.buffer_size
@@ -227,12 +226,13 @@ class LempelZiv():
         """
 
         window_sizes = self._calc_window_sizes(filename)
-        buffer_sizes = self._calc_buffer_sizes(filename)
+        # buffer_sizes = self._calc_buffer_sizes(filename)
+        buffer_sizes = [50, 100, 200, 300, 600, 900, 1200]
 
         benchmarks = self.benchmark_ratio(filename, window_sizes, buffer_sizes)
 
         x_values, y_values = np.meshgrid(np.array(window_sizes) / 1000,
-                                         np.array(buffer_sizes) / 1000)
+                                         np.array(buffer_sizes))
         z_values = np.array(benchmarks).transpose()
 
         fig = plt.figure()
@@ -243,11 +243,14 @@ class LempelZiv():
 
         axes.zaxis.set_major_locator(LinearLocator(10))
         axes.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        axes.set_title(f'Compression Ratio (Input = {os.path.getsize(filename)}B Lorem Ipsum)')
         axes.set_xlabel('Window size (KB)')
-        axes.set_ylabel('Lookahead buffer size (KB)')
+        axes.set_ylabel('Lookahead buffer size (B)')
         axes.set_zlabel('Compression ratio')
 
         fig.colorbar(surf, shrink=0.5, aspect=5)
+
+        axes.view_init(30, 50)
 
         plt.savefig('plots/compression_ratio.png')
 
@@ -350,16 +353,6 @@ class LempelZiv():
         self.lz77_decoder.decompress(filename)
 
 
-    def compress_lzss(self, filename):
-        """ Compress data """
-        self.lzss_encoder.compress(filename)
-
-
-    def decompress_lzss(self, filename):
-        """ Decompress data """
-        self.lzss_decoder.decompress(filename)
-
-
     @staticmethod
     def _calc_window_sizes(filename):
         file_size = os.path.getsize(filename)
@@ -382,14 +375,14 @@ class LempelZiv():
 
 if __name__ == '__main__':
     INPUT_DIR = 'lorem'
-    FILE = 'lorem/10kb.txt'
+    FILE = 'lorem/60kb.txt'
     W = 10000
     L = 250
 
     lz = LempelZiv(W, L)
 
-    # lz.analyse_time_complexity(INPUT_DIR, 20)
-    lz.analyse_compression_ratio(FILE)
+    lz.analyse_time_complexity(INPUT_DIR, 3)
+    # lz.analyse_compression_ratio(FILE)
     # lz.analyse_time_params('lorem/60kb.txt', 5)
 
     # print(len(lz.decoder.decompression))
