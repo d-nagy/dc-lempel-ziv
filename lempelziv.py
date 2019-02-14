@@ -1,5 +1,7 @@
 """ Digital Communication - Lempel-Ziv compression """
 
+import bz2
+import gzip
 import os
 import time
 from mpl_toolkits.mplot3d import Axes3D
@@ -65,6 +67,8 @@ class LempelZiv():
         labels = ['Average', 'Maximum', 'Minimum']
         colors = ['b', 'r', 'g']
 
+        plt.cla()
+
         for times, label, color in zip(encoding_times, labels, colors):
             x_values = []
             encoding_y_values = []
@@ -103,7 +107,7 @@ class LempelZiv():
             fit_range = np.arange(min(x_values), max(x_values))
             plt.plot(fit_range, fit_fn(fit_range), color=color)
 
-        plt.title(f'Decoder running time (W = {self.window_size}B, L = {self.buffer_size}B)')
+        plt.title(f'Decoder running time (W = {self.window_size}, L = {self.buffer_size})')
         plt.xlabel('File size (KB)')
         plt.ylabel('Running time (s)')
         plt.legend()
@@ -141,6 +145,8 @@ class LempelZiv():
             avg_decoding_times.append(decoding_benchmark['avg'])
             min_decoding_times.append(decoding_benchmark['min'])
             max_decoding_times.append(decoding_benchmark['max'])
+
+        plt.cla()
 
         plt.plot(x_values, avg_encoding_times, color='b', label='Average')
         plt.plot(x_values, max_encoding_times, color='r', label='Maximum')
@@ -191,6 +197,8 @@ class LempelZiv():
             min_decoding_times.append(decoding_benchmark['min'])
             max_decoding_times.append(decoding_benchmark['max'])
 
+        plt.cla()
+
         plt.plot(x_values, avg_encoding_times, color='b', label='Average')
         plt.plot(x_values, max_encoding_times, color='r', label='Maximum')
         plt.plot(x_values, min_encoding_times, color='g', label='Minimum')
@@ -235,6 +243,8 @@ class LempelZiv():
                                          np.array(buffer_sizes))
         z_values = np.array(benchmarks).transpose()
 
+        plt.cla()
+
         fig = plt.figure()
         axes = fig.gca(projection='3d')
 
@@ -253,6 +263,8 @@ class LempelZiv():
         axes.view_init(30, 50)
 
         plt.savefig('plots/compression_ratio.png')
+
+        axes.clear()
 
 
     def benchmark_time(self, filename, rounds):
@@ -381,9 +393,9 @@ if __name__ == '__main__':
 
     lz = LempelZiv(W, L)
 
-    lz.analyse_time_complexity(INPUT_DIR, 3)
+    # lz.analyse_time_complexity(INPUT_DIR, 5)
+    lz.analyse_time_params('lorem/200kb.txt', 5)
     # lz.analyse_compression_ratio(FILE)
-    # lz.analyse_time_params('lorem/60kb.txt', 5)
 
     # print(len(lz.decoder.decompression))
 
