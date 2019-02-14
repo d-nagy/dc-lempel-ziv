@@ -108,7 +108,6 @@ class LzssDecoder(Lz77Decoder):
         super().__init__(window_size, buffer_size)
         self.file_ext = '.LZSS'
 
-
     def decompress(self, filename):
         """
         Decompress a file that was compressed using LZ77 coding.
@@ -121,6 +120,7 @@ class LzssDecoder(Lz77Decoder):
 
         message = b''
         index = 0
+        c_index = 0
 
         compressed = bitarray()
 
@@ -128,7 +128,7 @@ class LzssDecoder(Lz77Decoder):
             compressed.fromfile(input_file)
 
             while True:
-                code_bin = compressed[:self.step + 1]
+                code_bin = compressed[c_index:c_index + self.step + 1]
 
                 if code_bin.length() < 8:
                     break
@@ -137,13 +137,13 @@ class LzssDecoder(Lz77Decoder):
                     next_sym = code_bin[:8].tobytes()
                     distance = length = 0
                     substring = b''
-                    del compressed[:9]
+                    c_index += 9
                 else:
                     if code_bin.length() < self.step - 8:
                         break
                     distance, length, next_sym = self._parse_bin_code(code_bin)
                     substring = message[index - distance:index - distance + length]
-                    del compressed[:self.step + 1]
+                    c_index += self.step + 1
 
                 self.decompression.append((distance, length, next_sym))
 
@@ -167,6 +167,6 @@ if __name__ == '__main__':
     decoder = Lz77Decoder(W, L)
     decoder.decompress(f'{FILE}.LZ77')
 
-    # decoder = LzssDecoder(W, L)
-    # decoder.decompress(f'{FILE}.LZSS')
+    # decoder = LzssDecoder(10000, 250)
+    # decoder.decompress(f'lorem/10kb.txt.LZSS')
     # [print(code) for code in decoder.decompression]
