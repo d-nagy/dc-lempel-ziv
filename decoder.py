@@ -10,8 +10,8 @@ class Lz77Decoder():
     def __init__(self, window_size, buffer_size):
         self.window_size = window_size
         self.buffer_size = buffer_size
-        self.distance_bits = (window_size - 1).bit_length()
-        self.length_bits = (buffer_size - 1).bit_length()
+        self.distance_bits = window_size.bit_length()
+        self.length_bits = buffer_size.bit_length()
         self.step = self.distance_bits + self.length_bits + 8
         self.decompression = []
         self.file_ext = '.LZ77'
@@ -19,14 +19,14 @@ class Lz77Decoder():
     def set_window_size(self, window_size):
         """ Setter method for window size """
         self.window_size = window_size
-        self.distance_bits = (window_size - 1).bit_length()
+        self.distance_bits = window_size.bit_length()
         self.step = self.distance_bits + self.length_bits + 8
 
 
     def set_buffer_size(self, buffer_size):
         """ Setter method for buffer size """
         self.buffer_size = buffer_size
-        self.length_bits = (buffer_size - 1).bit_length()
+        self.length_bits = buffer_size.bit_length()
         self.step = self.distance_bits + self.length_bits + 8
 
 

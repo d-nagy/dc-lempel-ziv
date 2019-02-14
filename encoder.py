@@ -10,8 +10,8 @@ class Lz77Encoder():
     def __init__(self, window_size, buffer_size):
         self.window_size = window_size
         self.buffer_size = buffer_size
-        self.distance_bits = (window_size - 1).bit_length()
-        self.length_bits = (buffer_size - 1).bit_length()
+        self.distance_bits = window_size.bit_length()
+        self.length_bits = buffer_size.bit_length()
         self.compression = []
         self.file_ext = '.LZ77'
 
@@ -139,10 +139,9 @@ class Lz77Encoder():
         while substring + next_sym in window_bytes:
             substring += next_sym
             length += 1
-            if length >= buffer_len:
-                next_sym = b''
-                break
             next_sym = buffer_bytes[length:length + 1]
+            if length == buffer_len - 1:
+                break
 
         if length > 0:
             distance = window_bytes[::-1].index(substring[::-1]) + length
