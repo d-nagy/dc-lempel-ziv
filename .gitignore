@@ -111,5 +111,3 @@ venv.bak/
 
 test_files/*.compressed
 test_files/*.decompressed
-
-plots/*
