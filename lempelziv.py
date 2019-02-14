@@ -85,7 +85,7 @@ class LempelZiv():
             plt.plot(fit_range, fit_fn(fit_range), color=color)
 
 
-        plt.title(f'Encoder running time (W = {self.window_size}B, L = {self.buffer_size}B)')
+        plt.title(f'Encoder running time (window size = {self.window_size} bytes, buffer size = {self.buffer_size} bytes)')
         plt.xlabel('File size (KB)')
         plt.ylabel('Running time (s)')
         plt.legend()
@@ -152,7 +152,7 @@ class LempelZiv():
         plt.plot(x_values, max_encoding_times, color='r', label='Maximum')
         plt.plot(x_values, min_encoding_times, color='g', label='Minimum')
 
-        plt.title(f'Encoder running time (L = {self.lz77_encoder.buffer_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.title(f'Encoder running time (buffer size = {self.lz77_encoder.buffer_size} bytes, input size = {os.path.getsize(filename)} bytes)')
         plt.xlabel('Window size (KB)')
         plt.ylabel('Running time (s)')
         plt.legend()
@@ -163,7 +163,7 @@ class LempelZiv():
         plt.plot(x_values, max_decoding_times, color='r', label='Maximum')
         plt.plot(x_values, min_decoding_times, color='g', label='Minimum')
 
-        plt.title(f'Decoder running time (L = {self.lz77_encoder.buffer_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.title(f'Decoder running time (buffer size = {self.lz77_encoder.buffer_size} bytes, input size = {os.path.getsize(filename)} bytes)')
         plt.xlabel('Window size (KB)')
         plt.ylabel('Running time (s)')
         plt.legend()
@@ -214,7 +214,7 @@ class LempelZiv():
         plt.plot(x_values, max_decoding_times, color='r', label='Maximum')
         plt.plot(x_values, min_decoding_times, color='g', label='Minimum')
 
-        plt.title(f'Decoder running time (W = {self.lz77_encoder.window_size}, Input size = {os.path.getsize(filename)}B)')
+        plt.title(f'Decoder running time (window size = {self.lz77_encoder.window_size} bytes, input size = {os.path.getsize(filename)} bytes)')
         plt.xlabel('Buffer size (B)')
         plt.ylabel('Running time (s)')
         plt.legend()
@@ -253,7 +253,7 @@ class LempelZiv():
 
         axes.zaxis.set_major_locator(LinearLocator(10))
         axes.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-        axes.set_title(f'Compression Ratio (Input = {os.path.getsize(filename)}B Lorem Ipsum)')
+        axes.set_title(f'Compression Ratio (input = {os.path.getsize(filename)} bytes of Lorem Ipsum)')
         axes.set_xlabel('Window size (KB)')
         axes.set_ylabel('Lookahead buffer size (B)')
         axes.set_zlabel('Compression ratio')
@@ -265,6 +265,62 @@ class LempelZiv():
         plt.savefig('plots/compression_ratio.png')
 
         axes.clear()
+
+
+    def analyse_file_types(self):
+        original_window_size = self.lz77_encoder.window_size
+
+        main_dir = 'file_types'
+
+        x_values = []
+        ratios = []
+        mpl_colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k']
+        colors = []
+
+        i = 0
+        for ext in os.listdir(main_dir):
+            files = [f'{main_dir}/{ext}/{filename}'
+                     for filename in os.listdir(f'{main_dir}/{ext}')]
+            files.sort(key=os.path.getsize)
+
+            for filename in files:
+                uncompressed_size = os.path.getsize(filename)
+                window_size = min(uncompressed_size // 10, 15000)
+
+                x_values.append(f'{round(uncompressed_size / 1000, 1)} KB {ext}')
+                colors.append(mpl_colors[i % len(mpl_colors)])
+
+                print(f'{filename}: window size = {window_size}')
+
+                self.lz77_encoder.set_window_size(window_size)
+                self.lz77_decoder.set_window_size(window_size)
+
+                self.compress_lz77(filename)
+
+                compressed_size = os.path.getsize(filename + self.lz77_encoder.file_ext)
+                ratio = uncompressed_size / compressed_size
+                print('Ratio: ', round(ratio, 2))
+
+                self.decompress_lz77(filename + self.lz77_encoder.file_ext)
+
+                ratios.append(ratio)
+
+            i += 1
+
+        self.lz77_encoder.set_window_size(original_window_size)
+        self.lz77_decoder.set_window_size(original_window_size)
+
+        x_pos = [i for i in range(len(x_values))]
+
+        plt.cla()
+        plt.bar(x_pos, ratios, color=colors)
+        plt.xlabel('File')
+        plt.ylabel('Compression ratio')
+        plt.title('Compression ratio for various file types')
+        plt.xticks(x_pos, x_values, rotation='vertical')
+
+        plt.savefig('plots/file_types.png')
+        plt.cla()
 
 
     def benchmark_time(self, filename, rounds):
@@ -389,12 +445,13 @@ if __name__ == '__main__':
     INPUT_DIR = 'lorem'
     FILE = 'lorem/60kb.txt'
     W = 10000
-    L = 250
+    L = 100
 
     lz = LempelZiv(W, L)
 
     # lz.analyse_time_complexity(INPUT_DIR, 5)
-    lz.analyse_time_params('lorem/200kb.txt', 5)
+    # lz.analyse_time_params('misc/alice29.txt', 10)
+    lz.analyse_file_types()
     # lz.analyse_compression_ratio(FILE)
 
     # print(len(lz.decoder.decompression))
