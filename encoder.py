@@ -140,7 +140,7 @@ class Lz77Encoder():
             substring += next_sym
             length += 1
             next_sym = buffer_bytes[length:length + 1]
-            if length == buffer_len - 1:
+            if length == buffer_len - 1 or buffer_len <= 1:
                 break
 
         if length > 0:
