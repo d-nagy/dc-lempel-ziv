@@ -101,73 +101,28 @@ class Lz77Decoder():
         return int('0b' + bits.to01(), 2)
 
 
-class LzssDecoder(Lz77Decoder):
-    """ LZSS Decoder """
-
-    def __init__(self, window_size, buffer_size):
-        super().__init__(window_size, buffer_size)
-        self.file_ext = '.LZSS'
-
-
-    def decompress(self, filename):
-        """
-        Decompress a file that was compressed using LZ77 coding.
-
-        Params:
-            filename: name of file to decompress
-        """
-
-        self.decompression = []
-
-        message = b''
-        index = 0
-        c_index = 0
-
-        compressed = bitarray()
-
-        with open(filename, 'rb') as input_file:
-            compressed.fromfile(input_file)
-
-            while True:
-                code_bin = compressed[c_index:c_index + self.step + 1]
-
-                if code_bin.length() < 8:
-                    break
-
-                if not code_bin.pop(0):
-                    next_sym = code_bin[:8].tobytes()
-                    distance = length = 0
-                    substring = b''
-                    c_index += 9
-                else:
-                    if code_bin.length() < self.step - 8:
-                        break
-                    distance, length, next_sym = self._parse_bin_code(code_bin)
-                    substring = message[index - distance:index - distance + length]
-                    c_index += self.step + 1
-
-                self.decompression.append((distance, length, next_sym))
-
-                message += substring + next_sym
-
-                index += length + 1
-
-        with open(filename.replace(self.file_ext, ''), 'wb') as output_file:
-            output_file.write(message)
-
-        os.remove(filename)
-
-
 if __name__ == '__main__':
     import sys
+    import time
 
     FILE = sys.argv[1]
     W = int(sys.argv[2])
     L = int(sys.argv[3])
 
     decoder = Lz77Decoder(W, L)
-    decoder.decompress(f'{FILE}.LZ77')
 
-    decoder = Lz77Decoder(10000, 100)
-    decoder.decompress(f'lorem/1000kb.txt.LZ77')
-    # [print(code) for code in decoder.decompression]
+    start = time.time()
+    decoder.decompress(FILE)
+    end = time.time()
+
+    runtime = end - start
+
+    print('-----------------------------------------')
+    print('LZ77 Decoder')
+    print('-----------------------------------------')
+    print(f'Sliding window size = {W} bytes')
+    print(f'Lookahead buffer size = {L} bytes')
+    print('-----------------------------------------')
+    print(f'File:              {FILE}')
+    print(f'Running time:      {round(runtime, 2)} seconds')
+    print('-----------------------------------------')
