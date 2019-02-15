@@ -40,7 +40,7 @@ class Lz77Decoder():
 
         self.decompression = []
 
-        message = b''
+        message = bytearray(b'')
         index = 0
 
         with open(filename, 'rb') as input_file:
@@ -67,13 +67,13 @@ class Lz77Decoder():
 
                     self.decompression.append((distance, length, next_sym))
 
-                    substring = message[index - distance:index - distance + length] + next_sym
+                    substring = bytes(message[index - distance:index - distance + length]) + next_sym
                     message += substring
 
                     index += length + 1
 
         with open(filename.replace(self.file_ext, ''), 'wb') as output_file:
-            output_file.write(message)
+            output_file.write(bytes(message))
 
         os.remove(filename)
 
@@ -107,6 +107,7 @@ class LzssDecoder(Lz77Decoder):
     def __init__(self, window_size, buffer_size):
         super().__init__(window_size, buffer_size)
         self.file_ext = '.LZSS'
+
 
     def decompress(self, filename):
         """
@@ -167,6 +168,6 @@ if __name__ == '__main__':
     decoder = Lz77Decoder(W, L)
     decoder.decompress(f'{FILE}.LZ77')
 
-    # decoder = LzssDecoder(10000, 250)
-    # decoder.decompress(f'lorem/10kb.txt.LZSS')
+    decoder = Lz77Decoder(10000, 100)
+    decoder.decompress(f'lorem/1000kb.txt.LZ77')
     # [print(code) for code in decoder.decompression]
