@@ -61,11 +61,6 @@ class Lz77Encoder():
 
                 self.compression.append((distance, length, next_sym))
 
-                if not code_to_write.length() % 8:
-                    with open(filename + self.file_ext, 'ab') as output:
-                        output.write(code_to_write.tobytes())
-                    code_to_write = bitarray()
-
                 next_bytes = bitarray()
                 try:
                     next_bytes.fromfile(input_file, length + 1)
@@ -77,7 +72,8 @@ class Lz77Encoder():
                 if window.length() > self.window_size * 8:
                     del window[:window.length() - self.window_size * 8]
 
-                buffer = buffer[(length + 1) * 8:] + next_bytes
+                del buffer[:(length + 1) * 8]
+                buffer += next_bytes
 
         with open(filename + self.file_ext, 'ab') as output:
             output.write(code_to_write.tobytes())
@@ -235,11 +231,12 @@ if __name__ == '__main__':
     import sys
     import time
 
-    FILE = sys.argv[1]
-    W = int(sys.argv[2])
-    L = int(sys.argv[3])
+    # FILE = sys.argv[1]
+    FILE = 'misc/alice29.txt'
+    # W = int(sys.argv[2])
+    # L = int(sys.argv[3])
 
-    encoder = Lz77Encoder(W, L)
+    encoder = Lz77Encoder(10000, 600)
     # encoder = LzssEncoder(W, L)
 
     uncompressed_size = os.path.getsize(FILE)
@@ -256,8 +253,8 @@ if __name__ == '__main__':
     print('-----------------------------------------')
     print('LZ77 Encoder')
     print('-----------------------------------------')
-    print(f'Sliding window size = {W} bytes')
-    print(f'Lookahead buffer size = {L} bytes')
+    print(f'Sliding window size = {10000} bytes')
+    print(f'Lookahead buffer size = {600} bytes')
     print('-----------------------------------------')
     print(f'File:              {FILE}')
     print(f'Original size:     {uncompressed_size} bytes')
@@ -267,4 +264,4 @@ if __name__ == '__main__':
     print('-----------------------------------------')
 
 
-    # [print(code) for code in encoder.compression]
+    print(max(encoder.compression, key=lambda x: x[1]))
